@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>About SkyBrowse</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20256%20256'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23141b3d'/%3E%3Cstop%20offset='1'%20stop-color='%2333295e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='256'%20height='256'%20rx='56'%20fill='url(%23g)'/%3E%3Cpath%20d='M40%20136%20L220%2040%20L146%20220%20L114%20146%20Z'%20fill='%23f4f6ff'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg: #0b1026;
+            --panel: rgba(20, 27, 61, 0.55);
+            --text: #e8ecf8;
+            --muted: #8a93b8;
+            --accent: #8b7cf6;
+            --border: rgba(255, 255, 255, 0.09);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse 70% 50% at 15% -10%, rgba(109, 93, 241, 0.28), transparent 60%),
+                radial-gradient(ellipse 60% 50% at 90% 110%, rgba(64, 132, 255, 0.2), transparent 60%),
+                var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 40px 24px;
+            user-select: none;
+        }
+
+        .logo {
+            width: 96px;
+            height: 96px;
+            border-radius: 26px;
+            box-shadow: 0 22px 55px rgba(109, 93, 241, 0.35);
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 650;
+            letter-spacing: -1px;
+            background: linear-gradient(180deg, #ffffff 20%, #a9b0e4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version {
+            color: var(--muted);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tagline {
+            color: #c9cdf2;
+            margin-top: 14px;
+            font-size: 15px;
+        }
+
+        .stack {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 22px;
+        }
+
+        .chip {
+            padding: 6px 13px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--panel);
+            color: var(--muted);
+            font-size: 12px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+        }
+
+        .links {
+            display: flex;
+            gap: 22px;
+            margin-top: 30px;
+            font-size: 13px;
+        }
+
+        .links a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .links a:hover { text-decoration: underline; }
+
+        .foot {
+            margin-top: 34px;
+            color: #5f6788;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <svg class="logo" viewBox="0 0 256 256" aria-hidden="true">
+        <defs>
+            <linearGradient id="about-bg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#141b3d"/>
+                <stop offset="0.55" stop-color="#1e2649"/>
+                <stop offset="1" stop-color="#372e63"/>
+            </linearGradient>
+        </defs>
+        <rect width="256" height="256" rx="56" fill="url(#about-bg)"/>
+        <path d="M40 136 L220 40 L146 220 L114 146 Z" fill="#f4f6ff"/>
+        <path d="M114 146 L220 40 L100 152 Z" fill="#c9cdf2" opacity="0.55"/>
+    </svg>
+
+    <h1>SkyBrowse</h1>
+    <p class="version" id="version">Version —</p>
+    <p class="tagline">A fast, lightweight, custom-built browser — no frameworks, no clutter.</p>
+
+    <div class="stack">
+        <span class="chip">Electron</span>
+        <span class="chip">React</span>
+        <span class="chip">TypeScript</span>
+        <span class="chip">Vite</span>
+        <span class="chip">Chromium</span>
+    </div>
+
+    <nav class="links" aria-label="Links">
+        <a href="https://github.com/notbangbang-dev" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+        <a href="skybrowse://newtab">New Tab</a>
+        <a href="skybrowse://settings">Settings</a>
+    </nav>
+
+    <p class="foot">© SkyBrowse. Built by Sky for the love of the web.</p>
+
+    <script src="about.js"></script>
+</body>
+</html>
