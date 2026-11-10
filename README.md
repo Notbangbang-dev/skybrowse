@@ -12,7 +12,10 @@ npm run dev        # develop with hot reload
 npm run build      # production build into out/
 npm run preview    # run the production build
 npm run typecheck  # strict TypeScript check
+npm run dist:win   # build the Windows installer into dist/ (electron-builder, NSIS)
 ```
+
+Windows packages are built via electron-builder (NSIS, per-user install, no admin required, desktop + Start Menu shortcuts): `dist/SkyBrowse-Setup-<version>.exe`. Packages are currently **unsigned** — Windows SmartScreen will warn; users click **More info → Run anyway**, or build it yourself with `npm run dist:win` and verify the source.
 
 ## Status: v1.0.0 — Milestone 1 (complete)
 
@@ -95,7 +98,7 @@ resources/
 
 - **M2**: bookmarks (+folders, toolbar, manager), history (search, clear), downloads (progress, pause/resume, reveal in Explorer)
 - **M3**: more settings (theme, privacy, clear browsing data, shortcut list, session restore), new-tab shortcut customization, keyboard shortcut list in settings
-- **M4**: performance pass, UI polish, Windows installer, Linux packaging
+- **M4**: performance pass, UI polish, code signing, Windows auto-update, Linux packaging
 
 ## Production notes
 

@@ -5,14 +5,18 @@
   "private": true,
   "description": "SkyBrowse — a lightweight, modern desktop browser.",
   "main": "./out/main/index.js",
+  "author": "Sky",
+  "repository": "Notbangbang-dev/skybrowse",
+  "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
-    "make:icon": "node scripts/make-icon.mjs"
+    "make:icon": "node scripts/make-icon.mjs && node scripts/make-ico.mjs",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win"
   },
-  "license": "MIT",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -23,8 +27,46 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.2",
     "electron": "^33.0.2",
+    "electron-builder": "^25.1.7",
     "electron-vite": "^2.3.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.8"
+  },
+  "build": {
+    "appId": "dev.sky.skybrowse",
+    "productName": "SkyBrowse",
+    "files": [
+      "out/**",
+      "resources/icon.png",
+      "resources/icon.ico",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/skybrowse",
+        "to": "skybrowse"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "resources/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "SkyBrowse-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
