@@ -103,7 +103,7 @@ resources/
 
 ## Roadmap
 
-- **M3**: more settings (theme, clear browsing data, session restore), new-tab shortcut customization, keyboard shortcut list page
+- **M3**: more settings (theme, clear browsing data, session restore), new-tab shortcut customization, keyboard shortcut list page + bug fixes.
 - **M4**: performance pass, UI polish, code signing, Windows auto-update, Linux packaging
 
 ## Production notes
