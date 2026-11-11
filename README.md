@@ -1,3 +1,4 @@
+Unsigned installer — SmartScreen warning; click More info → Run anyway, or build from source: npm run dist:win
 # SkyBrowse
 
 A lightweight, modern desktop browser with its own identity — built with Electron, React, TypeScript and Vite. Windows 10/11 first, Linux later. **Open source (MIT).**
