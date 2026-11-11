@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data: https:">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Downloads — SkyBrowse</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20256%20256'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23141b3d'/%3E%3Cstop%20offset='1'%20stop-color='%2333295e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='256'%20height='256'%20rx='56'%20fill='url(%23g)'/%3E%3Cpath%20d='M40%20136%20L220%2040%20L146%20220%20L114%20146%20Z'%20fill='%23f4f6ff'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg: #0b1026;
+            --panel: rgba(20, 27, 61, 0.55);
+            --text: #e8ecf8;
+            --muted: #8a93b8;
+            --accent: #8b7cf6;
+            --accent-strong: #6d5df1;
+            --border: rgba(255, 255, 255, 0.09);
+            --bar: rgba(139, 124, 246, 0.25);
+            --bar-fill: #8b7cf6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse 70% 50% at 10% -10%, rgba(109, 93, 241, 0.22), transparent 60%), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            padding: 36px 24px 60px;
+        }
+
+        .wrap { max-width: 860px; margin: 0 auto; }
+
+        .crumb { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+
+        h1 { font-size: 28px; letter-spacing: -0.5px; margin-bottom: 20px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        h1 button { font-size: 12px; background: none; border: 0; color: var(--accent); cursor: pointer; font: inherit; padding: 4px 8px; border-radius: 6px; }
+        h1 button:hover { background: rgba(139,124,246,0.12); }
+
+        .empty { padding: 60px 20px; text-align: center; color: var(--muted); font-size: 14px; border: 1px dashed var(--border); border-radius: 16px; }
+
+        .section-title {
+            font-size: 11px; font-weight: 650; letter-spacing: 0.8px; text-transform: uppercase;
+            color: var(--muted); padding: 14px 4px 8px; border-bottom: 1px solid var(--border);
+        }
+
+        .item {
+            display: flex; align-items: center; gap: 14px; padding: 12px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .item:last-child { border-bottom: 0; }
+
+        .file-icon { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 9px; background: var(--panel); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: #c9cdf2; }
+
+        .item-main { flex: 1; min-width: 0; }
+        .item-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .item-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+        .progress { margin-top: 7px; height: 4px; border-radius: 3px; background: var(--bar); overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--bar-fill); border-radius: 3px; transition: width 0.25s ease; }
+        .progress-fill.indeterminate { width: 40% !important; animation: slide 1.1s ease-in-out infinite; }
+
+        @keyframes slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(350%); }
+        }
+
+        .item-actions { display: flex; gap: 6px; flex: 0 0 auto; align-items: center; }
+
+        .btn {
+            padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--panel); color: var(--text); font: inherit; font-size: 11.5px;
+            cursor: pointer; white-space: nowrap; transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn.danger:hover { border-color: #f87171; color: #f87171; }
+
+        .error-note { color: #fca5a5; font-size: 12px; margin: 10px 4px 0; min-height: 16px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <p class="crumb">SkyBrowse · skybrowse://downloads</p>
+        <h1>Downloads <button id="clearCompleted" hidden>Clear completed</button></h1>
+
+        <p class="error-note" id="errorNote" role="status" aria-live="polite"></p>
+        <div id="activeList"></div>
+        <div id="completedSection" hidden><div class="section-title">Completed</div><div id="completedList"></div></div>
+        <p class="empty" id="empty" hidden>No downloads yet. Save something from any page and it will appear here.</p>
+    </div>
+
+    <script src="downloads.js"></script>
+</body>
+</html>

@@ -13,6 +13,37 @@ declare global {
         error?: string;
     }
 
+    interface SkybrowseBookmarkFolder {
+        id: string;
+        name: string;
+    }
+
+    interface SkybrowseBookmark {
+        id: string;
+        title: string;
+        url: string;
+        favicon: string | null;
+        parentId: string | null;
+        addedAt: number;
+    }
+
+    interface SkybrowseBookmarkStore {
+        folders: SkybrowseBookmarkFolder[];
+        bookmarks: SkybrowseBookmark[];
+    }
+
+    interface SkybrowseHistoryVisit {
+        id: string;
+        url: string;
+        title: string;
+        favicon: string | null;
+        at: number;
+    }
+
+    interface SkybrowseHistoryStore {
+        visits: SkybrowseHistoryVisit[];
+    }
+
     interface SkybrowseViewEvent {
         id: string;
         type: string;
@@ -55,6 +86,28 @@ declare global {
             hardReload: (id: string) => Promise<void>;
             stop: (id: string) => Promise<void>;
         };
+        bookmarks: {
+            get: () => Promise<SkybrowseBookmarkStore>;
+            add: (url: string, title: string, favicon: string | null) => Promise<
+                | { ok: true; store: SkybrowseBookmarkStore; already?: true }
+                | { ok: false; error: string }
+            >;
+            remove: (id: string) => Promise<SkybrowseBookmarkStore>;
+            rename: (id: string, title: string) => Promise<SkybrowseBookmarkStore>;
+            move: (id: string, parentId: string | null) => Promise<SkybrowseBookmarkStore>;
+            createFolder: (name: string) => Promise<
+                | { ok: true; folder: SkybrowseBookmarkFolder; store: SkybrowseBookmarkStore }
+                | { ok: false; error: string }
+            >;
+            removeFolder: (id: string) => Promise<SkybrowseBookmarkStore>;
+        };
+        history: {
+            get: () => Promise<SkybrowseHistoryStore>;
+            clear: () => Promise<SkybrowseHistoryStore>;
+            remove: (id: string) => Promise<SkybrowseHistoryStore>;
+        };
+        onBookmarksChanged: (callback: (store: SkybrowseBookmarkStore) => void) => () => void;
+        onHistoryChanged: (callback: (store: SkybrowseHistoryStore) => void) => () => void;
         onViewEvent: (callback: (event: SkybrowseViewEvent) => void) => () => void;
         onOpenTab: (callback: (url: string) => void) => () => void;
         onGuestShortcut: (callback: (shortcut: SkybrowseGuestShortcut) => void) => () => void;

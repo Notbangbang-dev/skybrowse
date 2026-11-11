@@ -17,7 +17,7 @@ npm run dist:win   # build the Windows installer into dist/ (electron-builder, N
 
 Windows packages are built via electron-builder (NSIS, per-user install, no admin required, desktop + Start Menu shortcuts): `dist/SkyBrowse-Setup-<version>.exe`. Packages are currently **unsigned** — Windows SmartScreen will warn; users click **More info → Run anyway**, or build it yourself with `npm run dist:win` and verify the source.
 
-## Status: v1.0.0 — Milestone 1 (complete)
+## Status: v1.1.0 — Milestones 1 + 2 (complete)
 
 - Frameless application with custom title bar, toolbar and tab strip
 - Chromium browsing via native `WebContentsView` per tab (sandboxed guests, no Node integration)
@@ -28,6 +28,10 @@ Windows packages are built via electron-builder (NSIS, per-user install, no admi
 - Side panel (settings, shortcuts, about) with chrome-resizing page area
 - HTML fullscreen support — chrome hides completely (e.g. YouTube fullscreen)
 - Toast notifications for certificate errors, crashes and load failures
+- **Bookmarks**: `skybrowse://bookmarks` — folders, filter, rename, delete, move between folders; star in the address bar (Ctrl+D), always-on bookmarks bar with folder dropdowns
+- **History**: `skybrowse://history` — grouped by day, searchable, per-entry delete, clear all; feeds address-bar suggestions (bookmarks first)
+- **Downloads**: `skybrowse://downloads` — live progress, pause/resume/cancel, open file, reveal in Explorer, persisted completed list
+- Address bar autocomplete from bookmarks + history (arrow keys, Enter, Esc)
 
 ## Security model
 
@@ -53,6 +57,9 @@ SkyBrowse ships its own internal scheme, like `chrome://`, served by the main pr
 | `skybrowse://newtab` | New Tab page — clock, search (your configured engine), quick dials |
 | `skybrowse://about` | Version, platform and stack |
 | `skybrowse://settings` | Real, persisted settings (search engine, startup page, homepage) |
+| `skybrowse://bookmarks` | Bookmark manager — folders, filter, rename, move |
+| `skybrowse://history` | Browsable, searchable history — clear per entry or entirely |
+| `skybrowse://downloads` | Active and completed downloads — open, reveal, manage |
 | anything else | Friendly 404 |
 
 ### Settings
@@ -96,13 +103,12 @@ resources/
 
 ## Roadmap
 
-- **M2**: bookmarks (+folders, toolbar, manager), history (search, clear), downloads (progress, pause/resume, reveal in Explorer)
-- **M3**: more settings (theme, privacy, clear browsing data, shortcut list, session restore), new-tab shortcut customization, keyboard shortcut list in settings
+- **M3**: more settings (theme, clear browsing data, session restore), new-tab shortcut customization, keyboard shortcut list page
 - **M4**: performance pass, UI polish, code signing, Windows auto-update, Linux packaging
 
 ## Production notes
 
-- User data lives in `%APPDATA%/skybrowse/` (settings store); nothing is written elsewhere
+- User data lives in `%APPDATA%/skybrowse/` (`settings.json`, `bookmarks.json`, `history.json`, `downloads.json`); nothing is written elsewhere
 - To reset to a clean state: quit SkyBrowse and delete `%APPDATA%/skybrowse/settings.json` — it is recreated with defaults
 - Settings failures surface in-app: failed writes report inline (settings page/panel), certificate/crash/load failures report as toast notifications — nothing fails silently
 

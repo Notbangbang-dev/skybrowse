@@ -69,6 +69,67 @@ const skybrowse = {
     sidePanel: {
         setOpen: (open: boolean) => ipcRenderer.invoke("skybrowse:sidepanel-toggle", open)
     },
+    bookmarks: {
+        get: () =>
+            ipcRenderer.invoke("skybrowse:bookmarks-get") as Promise<{
+                folders: Array<{ id: string; name: string }>;
+                bookmarks: Array<{
+                    id: string;
+                    title: string;
+                    url: string;
+                    favicon: string | null;
+                    parentId: string | null;
+                    addedAt: number;
+                }>;
+            }>,
+        add: (url: string, title: string, favicon: string | null) =>
+            ipcRenderer.invoke("skybrowse:bookmarks-add", { url, title, favicon }) as Promise<
+                | { ok: true; store: unknown; already?: true }
+                | { ok: false; error: string }
+            >,
+        remove: (id: string) => ipcRenderer.invoke("skybrowse:bookmarks-remove", id),
+        rename: (id: string, title: string) => ipcRenderer.invoke("skybrowse:bookmarks-rename", { id, title }),
+        move: (id: string, parentId: string | null) =>
+            ipcRenderer.invoke("skybrowse:bookmarks-move", { id, parentId }),
+        createFolder: (name: string) =>
+            ipcRenderer.invoke("skybrowse:bookmarks-create-folder", name) as Promise<
+                | { ok: true; folder: { id: string; name: string }; store: unknown }
+                | { ok: false; error: string }
+            >,
+        removeFolder: (id: string) => ipcRenderer.invoke("skybrowse:bookmarks-remove-folder", id)
+    },
+    history: {
+        get: () =>
+            ipcRenderer.invoke("skybrowse:history-get") as Promise<{
+                visits: Array<{
+                    id: string;
+                    url: string;
+                    title: string;
+                    favicon: string | null;
+                    at: number;
+                }>;
+            }>,
+        clear: () => ipcRenderer.invoke("skybrowse:history-clear"),
+        remove: (id: string) => ipcRenderer.invoke("skybrowse:history-remove", id)
+    },
+    onBookmarksChanged: (callback: (store: unknown) => void) => {
+        const listener = (_event: IpcRendererEvent, payload: unknown) => {
+            if (typeof payload === "object" && payload !== null) callback(payload);
+        };
+        ipcRenderer.on("skybrowse:bookmarks-changed", listener);
+        return () => {
+            ipcRenderer.removeListener("skybrowse:bookmarks-changed", listener);
+        };
+    },
+    onHistoryChanged: (callback: (store: unknown) => void) => {
+        const listener = (_event: IpcRendererEvent, payload: unknown) => {
+            if (typeof payload === "object" && payload !== null) callback(payload);
+        };
+        ipcRenderer.on("skybrowse:history-changed", listener);
+        return () => {
+            ipcRenderer.removeListener("skybrowse:history-changed", listener);
+        };
+    },
     tabs: {
         create: (id: string, url: string) => ipcRenderer.invoke("skybrowse:tab-create", { id, url }) as Promise<boolean>,
         destroy: (id: string) => ipcRenderer.invoke("skybrowse:tab-destroy", id),

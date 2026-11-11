@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data: https:">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>History — SkyBrowse</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20256%20256'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23141b3d'/%3E%3Cstop%20offset='1'%20stop-color='%2333295e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='256'%20height='256'%20rx='56'%20fill='url(%23g)'/%3E%3Cpath%20d='M40%20136%20L220%2040%20L146%20220%20L114%20146%20Z'%20fill='%23f4f6ff'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg: #0b1026;
+            --panel: rgba(20, 27, 61, 0.55);
+            --text: #e8ecf8;
+            --muted: #8a93b8;
+            --accent: #8b7cf6;
+            --border: rgba(255, 255, 255, 0.09);
+            --danger: #f87171;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(ellipse 70% 50% at 10% -10%, rgba(109, 93, 241, 0.22), transparent 60%), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            padding: 36px 24px 60px;
+        }
+
+        .wrap { max-width: 860px; margin: 0 auto; }
+
+        .crumb { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+
+        h1 { font-size: 28px; letter-spacing: -0.5px; margin-bottom: 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        h1 span.count { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+        .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+
+        .filter {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            font-size: 13px;
+        }
+
+        .filter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .btn {
+            padding: 9px 16px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--panel);
+            color: var(--text);
+            font: inherit;
+            font-size: 12.5px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+        .empty { padding: 60px 20px; text-align: center; color: var(--muted); font-size: 14px; border: 1px dashed var(--border); border-radius: 16px; }
+
+        .day {
+            font-size: 11px;
+            font-weight: 650;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 14px 4px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .row { display: flex; align-items: center; gap: 12px; padding: 9px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .row:last-child { border-bottom: 0; }
+
+        .row-time { flex: 0 0 46px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+        .row-favicon { flex: 0 0 15px; width: 15px; height: 15px; border-radius: 3px; }
+        .row-main { flex: 1; min-width: 0; }
+        .row-title { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .row-url { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .icon-btn {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; flex: 0 0 auto;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.07); color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <p class="crumb">SkyBrowse · skybrowse://history</p>
+        <h1>History <span class="count" id="count"></span></h1>
+
+        <div class="toolbar">
+            <input class="filter" id="filter" type="text" placeholder="Search history…" autocomplete="off" spellcheck="false" aria-label="Search history">
+            <button class="btn danger" id="clearAll">Clear all</button>
+        </div>
+
+        <div id="visits"></div>
+        <p class="empty" id="empty" hidden>Nothing yet. Visited pages will show up here.</p>
+    </div>
+
+    <script src="history.js"></script>
+</body>
+</html>
