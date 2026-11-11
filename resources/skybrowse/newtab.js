@@ -27,7 +27,7 @@ function tick() {
 }
 
 tick();
-setInterval(tick, 10000);
+setInterval(tick, 1000);
 
 if (window.skybrowse && window.skybrowse.getSettings) {
     window.skybrowse.getSettings().then(function (settings) {
