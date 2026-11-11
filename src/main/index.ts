@@ -528,19 +528,46 @@ function builtinPagePath(page: string): string | null {
         : path.join(process.resourcesPath, "skybrowse", `${page}.html`);
 }
 
+function builtinDir(): string {
+    return isDev
+        ? path.join(app.getAppPath(), "resources", "skybrowse")
+        : path.join(process.resourcesPath, "skybrowse");
+}
+
+const SAFE_ASSET = /^[a-zA-Z0-9][a-zA-Z0-9._-]*\.(js|css|png|jpe?g|svg|webp)$/;
+
+function builtinAssetPath(asset: string): string | null {
+    if (!SAFE_ASSET.test(asset) || asset !== path.basename(asset)) return null;
+
+    const dir = builtinDir();
+    const resolved = path.resolve(dir, asset);
+
+    if (!resolved.startsWith(dir + path.sep)) return null;
+    if (!fs.existsSync(resolved)) return null;
+    return resolved;
+}
+
 function registerSkybrowseProtocol(): void {
     protocol.handle("skybrowse", (request) => {
-        let page = "newtab";
+        let page = "";
+        let asset: string | null = null;
         try {
             const url = new URL(request.url);
             page = url.hostname.toLowerCase();
+
+            if (BUILTIN_PAGES.has(page)) {
+                const pathname = url.pathname.replace(/^\/+/, "");
+                if (pathname) {
+                    asset = decodeURIComponent(pathname);
+                }
+            }
         } catch {
             page = "";
         }
 
-        const filePath = builtinPagePath(page);
-        if (filePath) {
-            return net.fetch(pathToFileURL(filePath).href);
+        const pageFile = asset ? builtinAssetPath(asset) : builtinPagePath(page);
+        if (pageFile) {
+            return net.fetch(pathToFileURL(pageFile).href);
         }
 
         const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Not found — SkyBrowse</title><style>body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b1026;color:#e8ecf8;font-family:'Segoe UI',sans-serif;gap:14px}h1{font-size:22px;font-weight:600}p{color:#8a93b8;font-size:14px}a{color:#8b7cf6;text-decoration:none}a:hover{text-decoration:underline}</style></head><body><h1>skybrowse://${page || "?"} was not found</h1><p>This internal page does not exist (yet).</p><p><a href="skybrowse://newtab">Back to New Tab</a></p></body></html>`;
@@ -589,6 +616,34 @@ function contentBounds(): { x: number; y: number; width: number; height: number 
         width: Math.max(0, width - panel),
         height: Math.max(0, height - CHROME_HEIGHT)
     };
+}
+
+function enterHtmlFullscreen(id: string): void {
+    if (htmlFullscreenId === id) return;
+
+    htmlFullscreenId = id;
+    preFullscreenActiveId = activeGuestId;
+    activeGuestId = id;
+
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFullScreen()) {
+        mainWindow.setFullScreen(true);
+    }
+    layoutGuests();
+}
+
+function exitHtmlFullscreen(): void {
+    if (htmlFullscreenId === null) return;
+
+    htmlFullscreenId = null;
+    if (preFullscreenActiveId && guests.has(preFullscreenActiveId)) {
+        activeGuestId = preFullscreenActiveId;
+    }
+    preFullscreenActiveId = null;
+
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isFullScreen()) {
+        mainWindow.setFullScreen(false);
+    }
+    layoutGuests();
 }
 
 function layoutGuests(): void {
@@ -720,21 +775,8 @@ function createGuest(id: string, url: string): WebContentsView | null {
         }
     });
 
-    wc.on("enter-html-full-screen", () => {
-        htmlFullscreenId = id;
-        preFullscreenActiveId = activeGuestId;
-        activeGuestId = id;
-        layoutGuests();
-    });
-
-    wc.on("leave-html-full-screen", () => {
-        htmlFullscreenId = null;
-        if (preFullscreenActiveId && guests.has(preFullscreenActiveId)) {
-            activeGuestId = preFullscreenActiveId;
-        }
-        preFullscreenActiveId = null;
-        layoutGuests();
-    });
+    wc.on("enter-html-full-screen", () => enterHtmlFullscreen(id));
+    wc.on("leave-html-full-screen", () => exitHtmlFullscreen());
 
     const bounds = contentBounds();
     view.setBounds(bounds);
@@ -1193,14 +1235,32 @@ if (!gotLock) {
         app.setName("SkyBrowse");
 
         const ses = session.defaultSession;
-        ses.setPermissionRequestHandler((_webContents, _permission, callback) => {
-            callback(false);
+        const ALLOWED_PERMISSIONS = new Set(["fullscreen"]);
+        ses.setPermissionRequestHandler((_webContents, permission, callback) => {
+            callback(ALLOWED_PERMISSIONS.has(permission));
         });
-        ses.setPermissionCheckHandler(() => false);
+        ses.setPermissionCheckHandler((_webContents, permission) => ALLOWED_PERMISSIONS.has(permission));
         ses.on("will-download", handleWillDownload);
 
         registerSkybrowseProtocol();
         createWindow();
+
+        const FULLSCREEN_POLL_MS = 400;
+        setInterval(() => {
+            const id = activeGuestId;
+            if (!id) {
+                if (htmlFullscreenId !== null) exitHtmlFullscreen();
+                return;
+            }
+            const view = guests.get(id);
+            if (!view) return;
+            view.webContents.executeJavaScript("document.fullscreenElement ? 1 : 0").then(result => {
+                if (result === 1) enterHtmlFullscreen(id);
+                else exitHtmlFullscreen();
+            }).catch(() => {
+                /* guest may be navigating */
+            });
+        }, FULLSCREEN_POLL_MS);
 
         app.on("activate", () => {
             if (BrowserWindow.getAllWindows().length === 0) createWindow();
