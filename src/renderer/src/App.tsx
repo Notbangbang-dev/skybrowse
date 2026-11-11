@@ -625,6 +625,12 @@ export default function App() {
                 </form>
 
                 <div className="toolbar-right">
+                    <button className="nav-button" onClick={() => navigateActive("skybrowse://history")} aria-label="History" title="History">
+                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.4"/><path d="M8 5v3.2l2.1 1.4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </button>
+                    <button className="nav-button" onClick={() => navigateActive("skybrowse://downloads")} aria-label="Downloads" title="Downloads">
+                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 2.5v8M4.5 7L8 10.5 11.5 7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 13.5h10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                    </button>
                     <button
                         className={`nav-button sidepanel-toggle${panelOpen ? " active" : ""}`}
                         onClick={() => {

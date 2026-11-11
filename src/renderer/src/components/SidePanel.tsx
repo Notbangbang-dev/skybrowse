@@ -122,6 +122,14 @@ export default function SidePanel({ open, onClose, onOpenUrl, settings, version 
                     </p>
                 </section>
 
+                <section className="panel-section" aria-label="Pages">
+                    <h2 className="panel-heading">Pages</h2>
+                    <div className="panel-links">
+                        <button className="panel-link" onClick={() => onOpenUrl("skybrowse://history")}>History</button>
+                        <button className="panel-link" onClick={() => onOpenUrl("skybrowse://downloads")}>Downloads</button>
+                    </div>
+                </section>
+
                 <section className="panel-section" aria-label="Keyboard shortcuts">
                     <h2 className="panel-heading">Keyboard shortcuts</h2>
                     <dl className="panel-shortcuts">
