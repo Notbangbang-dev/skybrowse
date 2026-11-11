@@ -248,6 +248,16 @@ export default function App() {
         setWorkspaceModal({ mode: "create" });
     }, []);
 
+    const requestRenameWorkspace = useCallback((wsId: string) => {
+        const workspace = workspaces.find(ws => ws.id === wsId);
+        if (!workspace) return;
+        setWorkspaceModal({ mode: "rename", workspaceId: wsId, workspaceName: workspace.name });
+    }, [workspaces]);
+
+    const confirmRenameWorkspace = useCallback((wsId: string, name: string) => {
+        setWorkspaces(previous => previous.map(ws => (ws.id === wsId ? { ...ws, name } : ws)));
+    }, []);
+
     const requestDeleteWorkspace = useCallback((wsId: string) => {
         if (workspaces.length <= 1) {
             addToast("You need at least one workspace.");
@@ -287,12 +297,16 @@ export default function App() {
             setWorkspaces(previous => [...previous, workspace]);
             setActiveWorkspaceId(workspace.id);
             newTab(undefined, "SkyBrowse", workspace.id);
-        } else if (workspaceModal.workspaceId) {
+        } else if (workspaceModal.workspaceId && workspaceModal.mode === "delete") {
             confirmDeleteWorkspace(workspaceModal.workspaceId);
+        } else if (workspaceModal.workspaceId && workspaceModal.mode === "rename") {
+            const name = payload.name?.trim();
+            if (!name) return;
+            confirmRenameWorkspace(workspaceModal.workspaceId, name);
         }
 
         setWorkspaceModal(null);
-    }, [workspaceModal, workspaces.length, newTab, confirmDeleteWorkspace]);
+    }, [workspaceModal, workspaces.length, newTab, confirmDeleteWorkspace, confirmRenameWorkspace]);
 
     useEffect(() => {
         return window.skybrowse.onOpenTab(url => {
@@ -692,6 +706,7 @@ export default function App() {
                     activeWorkspaceId={activeWorkspaceId}
                     onSwitch={switchWorkspace}
                     onCreate={openCreateWorkspaceModal}
+                    onRename={requestRenameWorkspace}
                     onClose={requestDeleteWorkspace}
                 />
                 <div className="content">

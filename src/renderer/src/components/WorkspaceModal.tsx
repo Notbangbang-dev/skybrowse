@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
-export type ModalMode = "create" | "delete";
+export type ModalMode = "create" | "delete" | "rename";
 
 interface WorkspaceModalProps {
     mode: ModalMode;
@@ -11,19 +11,30 @@ interface WorkspaceModalProps {
 
 export default function WorkspaceModal({ mode, workspaceName, onCancel, onConfirm }: WorkspaceModalProps) {
     const inputRef = useRef<HTMLInputElement | null>(null);
+    const [name, setName] = useState(workspaceName ?? "");
 
     useEffect(() => {
-        if (mode === "create") inputRef.current?.focus();
+        if (mode === "create" || mode === "rename") {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
     }, [mode]);
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (mode === "create") {
-            onConfirm({ name: inputRef.current?.value });
+            onConfirm({ name: name.trim() || undefined });
+            return;
+        }
+        if (mode === "rename") {
+            onConfirm({ name: name.trim() || undefined });
             return;
         }
         onConfirm({});
     };
+
+    const title =
+        mode === "create" ? "New workspace" : mode === "rename" ? "Rename workspace" : "Delete workspace";
 
     return (
         <div className="modal-backdrop" onClick={onCancel} role="presentation">
@@ -34,20 +45,19 @@ export default function WorkspaceModal({ mode, workspaceName, onCancel, onConfir
                 aria-labelledby="workspace-modal-title"
                 onClick={event => event.stopPropagation()}
             >
-                <h2 className="modal-title" id="workspace-modal-title">
-                    {mode === "create" ? "New workspace" : "Delete workspace"}
-                </h2>
+                <h2 className="modal-title" id="workspace-modal-title">{title}</h2>
 
                 <form onSubmit={submit}>
-                    {mode === "create" && (
+                    {(mode === "create" || mode === "rename") && (
                         <label className="panel-field">
                             <span className="panel-label">Name</span>
                             <input
                                 ref={inputRef}
                                 className="panel-input"
                                 type="text"
-                                placeholder="e.g. Personal"
-                                autoFocus
+                                placeholder="e.g. School"
+                                value={name}
+                                onChange={event => setName(event.target.value)}
                                 required
                                 aria-label="Workspace name"
                             />
@@ -63,7 +73,7 @@ export default function WorkspaceModal({ mode, workspaceName, onCancel, onConfir
                     <div className="modal-actions">
                         <button type="button" className="btn" onClick={onCancel}>Cancel</button>
                         <button type="submit" className={`btn ${mode === "delete" ? "btn-danger" : "btn-primary"}`}>
-                            {mode === "create" ? "Create" : "Delete"}
+                            {mode === "create" ? "Create" : mode === "rename" ? "Save" : "Delete"}
                         </button>
                     </div>
                 </form>
