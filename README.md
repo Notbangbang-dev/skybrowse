@@ -17,9 +17,10 @@ npm run dist:win   # build the Windows installer into dist/ (electron-builder, N
 
 Windows packages are built via electron-builder (NSIS, per-user install, no admin required, desktop + Start Menu shortcuts): `dist/SkyBrowse-Setup-<version>.exe`. Packages are currently **unsigned** — Windows SmartScreen will warn; users click **More info → Run anyway**, or build it yourself with `npm run dist:win` and verify the source.
 
-## Status: v1.1.0 — Milestones 1 + 2 (complete)
+## Status: v1.4.0 — Milestones 1 + 2 (complete)
 
 - Frameless application with custom title bar, toolbar and tab strip
+- **Workspaces** — per-user tab groups with isolated state, saved/restored across restarts, quick switch from the title bar and hover/close per-workspace management
 - Chromium browsing via native `WebContentsView` per tab (sandboxed guests, no Node integration)
 - Address bar with URL validation + search fallback (Google / Bing / DuckDuckGo)
 - Back / forward / reload / stop / home

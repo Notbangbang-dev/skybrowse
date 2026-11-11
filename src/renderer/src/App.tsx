@@ -1,4 +1,5 @@
 import {
+    CSSProperties,
     FormEvent,
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
@@ -20,9 +21,19 @@ interface TabState {
     favicon: string | null;
     canGoBack: boolean;
     canGoForward: boolean;
+    workspaceId: string;
 }
 
-function createTab(id: string, url: string, title: string): TabState {
+interface Workspace {
+    id: string;
+    name: string;
+    color: string;
+}
+
+const WORKSPACE_PALETTE = ["#8b7cf6", "#5eb1ff", "#3ddc97", "#f5b84c", "#f87171", "#c084fc"];
+const WORKSPACES_STORAGE_KEY = "skybrowse.workspaces.v1";
+
+function createTab(id: string, url: string, title: string, workspaceId: string): TabState {
     return {
         id,
         url,
@@ -30,8 +41,38 @@ function createTab(id: string, url: string, title: string): TabState {
         loading: true,
         favicon: null,
         canGoBack: false,
-        canGoForward: false
+        canGoForward: false,
+        workspaceId
     };
+}
+
+function makeWorkspace(name: string, index: number): Workspace {
+    return {
+        id: crypto.randomUUID(),
+        name: name.trim() || `Workspace ${index + 1}`,
+        color: WORKSPACE_PALETTE[index % WORKSPACE_PALETTE.length]
+    };
+}
+
+function saveWorkspaceState(data: { workspaces: Workspace[]; tabs: TabState[]; activeWorkspaceId: string }) {
+    try {
+        localStorage.setItem(WORKSPACES_STORAGE_KEY, JSON.stringify(data));
+    } catch {
+        // storage unavailable — ignore
+    }
+}
+
+function loadWorkspaceState(): { workspaces: Workspace[]; tabs: TabState[]; activeWorkspaceId: string } | null {
+    try {
+        const raw = localStorage.getItem(WORKSPACES_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed?.workspaces) || !Array.isArray(parsed?.tabs)) return null;
+        if (typeof parsed?.activeWorkspaceId !== "string") return null;
+        return parsed;
+    } catch {
+        return null;
+    }
 }
 
 export default function App() {
@@ -39,6 +80,8 @@ export default function App() {
     const [settings, setSettings] = useState<SkybrowseSettings>({ searchEngine: "google", homepage: "", startupPage: "newtab" });
     const [tabs, setTabs] = useState<TabState[]>([]);
     const [activeId, setActiveId] = useState<string>("");
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+    const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("");
     const [addressText, setAddressText] = useState<string>("");
     const [panelOpen, setPanelOpen] = useState<boolean>(false);
     const [bookmarkStore, setBookmarkStore] = useState<SkybrowseBookmarkStore>({ folders: [], bookmarks: [] });
@@ -66,11 +109,13 @@ export default function App() {
     const addressRef = useRef<HTMLInputElement | null>(null);
     const tabsRef = useRef(tabs);
     const activeIdRef = useRef(activeId);
+    const activeWorkspaceIdRef = useRef(activeWorkspaceId);
     const startPageUrlRef = useRef<string>("");
     const dragIndexRef = useRef<number | null>(null);
 
     tabsRef.current = tabs;
     activeIdRef.current = activeId;
+    activeWorkspaceIdRef.current = activeWorkspaceId;
     startPageUrlRef.current = appInfo?.startPageUrl ?? "";
 
     const patchTab = useCallback((id: string, patch: Partial<TabState>) => {
@@ -78,15 +123,16 @@ export default function App() {
     }, []);
 
     const newTab = useCallback(
-        (url?: string, title = "SkyBrowse") => {
+        (url?: string, title = "SkyBrowse", workspaceId?: string) => {
             const startPageUrl = startPageUrlRef.current;
-            if (!startPageUrl) return;
+            const wsId = workspaceId ?? activeWorkspaceIdRef.current;
+            if (!startPageUrl || !wsId) return;
             const target = url ?? startPageUrl;
             const id = crypto.randomUUID();
 
             window.skybrowse.tabs.create(id, target);
 
-            setTabs(previous => [...previous, createTab(id, target, title)]);
+            setTabs(previous => [...previous, createTab(id, target, title, wsId)]);
             setActiveId(id);
         },
         []
@@ -118,13 +164,61 @@ export default function App() {
     useEffect(() => {
         if (!appInfo || initializedRef.current) return;
         initializedRef.current = true;
+
+        const saved = loadWorkspaceState();
+        const initialWorkspaces = saved?.workspaces?.length
+            ? saved.workspaces.map((ws, index) => ({ ...ws, color: ws.color ?? WORKSPACE_PALETTE[index % WORKSPACE_PALETTE.length] }))
+            : [makeWorkspace("Personal", 0)];
+        setWorkspaces(initialWorkspaces);
+
+        const savedActive = saved?.activeWorkspaceId && initialWorkspaces.some(ws => ws.id === saved.activeWorkspaceId)
+            ? saved.activeWorkspaceId
+            : initialWorkspaces[0].id;
+        setActiveWorkspaceId(savedActive);
+
         const startup =
             appInfo.settings?.startupPage === "homepage" && appInfo.settings.homepage
                 ? appInfo.settings.homepage
                 : undefined;
+
+        const savedTabs = saved?.tabs?.filter(t => typeof t.url === "string" && typeof t.id === "string" && typeof t.workspaceId === "string");
+        if (savedTabs && savedTabs.length) {
+            const hydrated = savedTabs.map(t => ({
+                id: t.id,
+                url: t.url,
+                title: t.title ?? "SkyBrowse",
+                loading: true,
+                favicon: null as string | null,
+                canGoBack: false,
+                canGoForward: false,
+                workspaceId: t.workspaceId
+            }));
+
+            hydrated.forEach(tab => {
+                window.skybrowse.tabs.create(tab.id, tab.url);
+            });
+
+            setTabs(hydrated);
+
+            const first = hydrated.find(t => t.workspaceId === savedActive) ?? hydrated[0];
+            setActiveId(first.id);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            return;
+        }
+
         newTab(startup);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [appInfo]);
+
+    useEffect(() => {
+        if (!initializedRef.current || workspaces.length === 0) return;
+
+        const timer = window.setTimeout(() => {
+            saveWorkspaceState({ workspaces, tabs, activeWorkspaceId });
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [tabs, workspaces, activeWorkspaceId]);
 
     useEffect(() => {
         return window.skybrowse.onSettingsChanged(next => {
@@ -134,6 +228,56 @@ export default function App() {
 
     const openTabRef = useRef(newTab);
     openTabRef.current = newTab;
+
+    const switchWorkspace = useCallback((wsId: string) => {
+        setActiveWorkspaceId(wsId);
+
+        const tabsIn = tabsRef.current.filter(t => t.workspaceId === wsId);
+        if (tabsIn.length) {
+            const target = tabsIn.find(t => t.id === activeIdRef.current) ?? tabsIn[0];
+            setActiveId(target.id);
+            return;
+        }
+
+        newTab(undefined, "SkyBrowse", wsId);
+    }, [newTab]);
+
+    const createWorkspace = useCallback(() => {
+        const name = window.prompt("Workspace name");
+        if (!name || !name.trim()) return;
+
+        const workspace = makeWorkspace(name.trim(), workspaces.length);
+        setWorkspaces(previous => [...previous, workspace]);
+        setActiveWorkspaceId(workspace.id);
+        newTab(undefined, "SkyBrowse", workspace.id);
+    }, [workspaces.length, newTab]);
+
+    const deleteWorkspace = useCallback((wsId: string) => {
+        if (workspaces.length <= 1) {
+            addToast("You need at least one workspace.");
+            return;
+        }
+
+        const workspace = workspaces.find(ws => ws.id === wsId);
+        const confirmed = window.confirm(`Delete workspace "${workspace?.name ?? "Untitled"}"? Its tabs will also close.`);
+        if (!confirmed) return;
+
+        const remaining = workspaces.filter(ws => ws.id !== wsId);
+        const tabsToClose = tabsRef.current.filter(t => t.workspaceId === wsId);
+        tabsToClose.forEach(t => window.skybrowse.tabs.destroy(t.id));
+
+        const restTabs = tabsRef.current.filter(t => t.workspaceId !== wsId);
+        setTabs(restTabs);
+        setWorkspaces(remaining);
+
+        const nextActive = remaining[0].id;
+        setActiveWorkspaceId(nextActive);
+
+        if (activeIdRef.current && tabsRef.current.some(t => t.id === activeIdRef.current && t.workspaceId === wsId)) {
+            const fallback = restTabs.find(t => t.workspaceId === nextActive) ?? restTabs[0];
+            setActiveId(fallback?.id ?? "");
+        }
+    }, [workspaces, addToast]);
 
     useEffect(() => {
         return window.skybrowse.onOpenTab(url => {
@@ -184,7 +328,7 @@ export default function App() {
     }, [patchTab, addToast]);
 
     const activeTab = tabs.find(tab => tab.id === activeId) ?? null;
-    const visibleTabs = tabs;
+    const visibleTabs = activeWorkspaceId ? tabs.filter(tab => tab.workspaceId === activeWorkspaceId) : tabs;
 
     useEffect(() => {
         if (activeId) window.skybrowse.tabs.activate(activeId);
@@ -432,6 +576,29 @@ export default function App() {
                 <div className="brand">
                     <Logo size={21} />
                     <span className="wordmark">SkyBrowse</span>
+                </div>
+
+                <div className="workspace-bar" role="tablist" aria-label="Workspaces">
+                    {workspaces.map(workspace => (
+                        <button
+                            key={workspace.id}
+                            className={`workspace-btn${activeWorkspaceId === workspace.id ? " active" : ""}`}
+                            style={{ "--workspace-color": workspace.color } as CSSProperties}
+                            onClick={() => switchWorkspace(workspace.id)}
+                            onContextMenu={event => {
+                                event.preventDefault();
+                                deleteWorkspace(workspace.id);
+                            }}
+                            role="tab"
+                            aria-selected={activeWorkspaceId === workspace.id}
+                            tabIndex={activeWorkspaceId === workspace.id ? 0 : -1}
+                            title={workspace.name}
+                        >
+                            <span className="workspace-dot" aria-hidden="true" />
+                            <span className="workspace-name">{workspace.name}</span>
+                        </button>
+                    ))}
+                    <button className="workspace-add" onClick={createWorkspace} aria-label="Add workspace" title="Add workspace">+</button>
                 </div>
 
                 <div className="tabstrip" role="tablist" aria-label="Open tabs">
