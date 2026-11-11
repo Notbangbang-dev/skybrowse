@@ -1,5 +1,4 @@
 import {
-    CSSProperties,
     FormEvent,
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
@@ -10,6 +9,8 @@ import {
 } from "react";
 import Logo from "./components/Logo";
 import SidePanel from "./components/SidePanel";
+import Sidebar from "./components/Sidebar";
+import WorkspaceModal, { ModalMode } from "./components/WorkspaceModal";
 import { getSearchEngine } from "./lib/search";
 import { normalizeInput } from "./lib/url";
 
@@ -84,6 +85,7 @@ export default function App() {
     const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>("");
     const [addressText, setAddressText] = useState<string>("");
     const [panelOpen, setPanelOpen] = useState<boolean>(false);
+    const [workspaceModal, setWorkspaceModal] = useState<{ mode: ModalMode; workspaceId?: string; workspaceName?: string } | null>(null);
     const [bookmarkStore, setBookmarkStore] = useState<SkybrowseBookmarkStore>({ folders: [], bookmarks: [] });
     const [historyVisits, setHistoryVisits] = useState<SkybrowseHistoryVisit[]>([]);
     const [suggestionsOpen, setSuggestionsOpen] = useState<boolean>(false);
@@ -242,26 +244,21 @@ export default function App() {
         newTab(undefined, "SkyBrowse", wsId);
     }, [newTab]);
 
-    const createWorkspace = useCallback(() => {
-        const name = window.prompt("Workspace name");
-        if (!name || !name.trim()) return;
+    const openCreateWorkspaceModal = useCallback(() => {
+        setWorkspaceModal({ mode: "create" });
+    }, []);
 
-        const workspace = makeWorkspace(name.trim(), workspaces.length);
-        setWorkspaces(previous => [...previous, workspace]);
-        setActiveWorkspaceId(workspace.id);
-        newTab(undefined, "SkyBrowse", workspace.id);
-    }, [workspaces.length, newTab]);
-
-    const deleteWorkspace = useCallback((wsId: string) => {
+    const requestDeleteWorkspace = useCallback((wsId: string) => {
         if (workspaces.length <= 1) {
             addToast("You need at least one workspace.");
             return;
         }
 
         const workspace = workspaces.find(ws => ws.id === wsId);
-        const confirmed = window.confirm(`Delete workspace "${workspace?.name ?? "Untitled"}"? Its tabs will also close.`);
-        if (!confirmed) return;
+        setWorkspaceModal({ mode: "delete", workspaceId: wsId, workspaceName: workspace?.name ?? "Untitled" });
+    }, [workspaces, addToast]);
 
+    const confirmDeleteWorkspace = useCallback((wsId: string) => {
         const remaining = workspaces.filter(ws => ws.id !== wsId);
         const tabsToClose = tabsRef.current.filter(t => t.workspaceId === wsId);
         tabsToClose.forEach(t => window.skybrowse.tabs.destroy(t.id));
@@ -277,7 +274,25 @@ export default function App() {
             const fallback = restTabs.find(t => t.workspaceId === nextActive) ?? restTabs[0];
             setActiveId(fallback?.id ?? "");
         }
-    }, [workspaces, addToast]);
+    }, [workspaces]);
+
+    const handleWorkspaceModalConfirm = useCallback((payload: { name?: string }) => {
+        if (!workspaceModal) return;
+
+        if (workspaceModal.mode === "create") {
+            const name = payload.name?.trim();
+            if (!name) return;
+
+            const workspace = makeWorkspace(name, workspaces.length);
+            setWorkspaces(previous => [...previous, workspace]);
+            setActiveWorkspaceId(workspace.id);
+            newTab(undefined, "SkyBrowse", workspace.id);
+        } else if (workspaceModal.workspaceId) {
+            confirmDeleteWorkspace(workspaceModal.workspaceId);
+        }
+
+        setWorkspaceModal(null);
+    }, [workspaceModal, workspaces.length, newTab, confirmDeleteWorkspace]);
 
     useEffect(() => {
         return window.skybrowse.onOpenTab(url => {
@@ -578,29 +593,6 @@ export default function App() {
                     <span className="wordmark">SkyBrowse</span>
                 </div>
 
-                <div className="workspace-bar" role="tablist" aria-label="Workspaces">
-                    {workspaces.map(workspace => (
-                        <button
-                            key={workspace.id}
-                            className={`workspace-btn${activeWorkspaceId === workspace.id ? " active" : ""}`}
-                            style={{ "--workspace-color": workspace.color } as CSSProperties}
-                            onClick={() => switchWorkspace(workspace.id)}
-                            onContextMenu={event => {
-                                event.preventDefault();
-                                deleteWorkspace(workspace.id);
-                            }}
-                            role="tab"
-                            aria-selected={activeWorkspaceId === workspace.id}
-                            tabIndex={activeWorkspaceId === workspace.id ? 0 : -1}
-                            title={workspace.name}
-                        >
-                            <span className="workspace-dot" aria-hidden="true" />
-                            <span className="workspace-name">{workspace.name}</span>
-                        </button>
-                    ))}
-                    <button className="workspace-add" onClick={createWorkspace} aria-label="Add workspace" title="Add workspace">+</button>
-                </div>
-
                 <div className="tabstrip" role="tablist" aria-label="Open tabs">
                     {visibleTabs.map((t, index) => {
                         const selected = t.id === activeId;
@@ -694,6 +686,15 @@ export default function App() {
                 </div>
             </header>
 
+            <div className="app-body">
+                <Sidebar
+                    workspaces={workspaces}
+                    activeWorkspaceId={activeWorkspaceId}
+                    onSwitch={switchWorkspace}
+                    onCreate={openCreateWorkspaceModal}
+                    onClose={requestDeleteWorkspace}
+                />
+                <div className="content">
             <div className="toolbar">
                 <div className="nav-buttons">
                     <button className="nav-button" onClick={goBack} disabled={!tab?.canGoBack} aria-label="Back" title="Back (Alt+Left)">
@@ -853,6 +854,8 @@ export default function App() {
             </nav>
 
             <main className="views" aria-label="Page content" />
+                </div>
+            </div>
 
             <div className="toasts" aria-live="polite">
                 {toasts.map(toast => (
@@ -881,6 +884,15 @@ export default function App() {
                 settings={settings}
                 version={appInfo.version}
             />
+
+            {workspaceModal && (
+                <WorkspaceModal
+                    mode={workspaceModal.mode}
+                    workspaceName={workspaceModal.workspaceName}
+                    onCancel={() => setWorkspaceModal(null)}
+                    onConfirm={handleWorkspaceModalConfirm}
+                />
+            )}
         </div>
     );
 }
