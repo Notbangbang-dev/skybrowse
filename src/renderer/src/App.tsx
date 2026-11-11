@@ -245,12 +245,14 @@ export default function App() {
     }, [newTab]);
 
     const openCreateWorkspaceModal = useCallback(() => {
+        window.skybrowse.tabs.activate("");
         setWorkspaceModal({ mode: "create" });
     }, []);
 
     const requestRenameWorkspace = useCallback((wsId: string) => {
         const workspace = workspaces.find(ws => ws.id === wsId);
         if (!workspace) return;
+        window.skybrowse.tabs.activate("");
         setWorkspaceModal({ mode: "rename", workspaceId: wsId, workspaceName: workspace.name });
     }, [workspaces]);
 
@@ -263,7 +265,7 @@ export default function App() {
             addToast("You need at least one workspace.");
             return;
         }
-
+        window.skybrowse.tabs.activate("");
         const workspace = workspaces.find(ws => ws.id === wsId);
         setWorkspaceModal({ mode: "delete", workspaceId: wsId, workspaceName: workspace?.name ?? "Untitled" });
     }, [workspaces, addToast]);
@@ -904,8 +906,14 @@ export default function App() {
                 <WorkspaceModal
                     mode={workspaceModal.mode}
                     workspaceName={workspaceModal.workspaceName}
-                    onCancel={() => setWorkspaceModal(null)}
-                    onConfirm={handleWorkspaceModalConfirm}
+                    onCancel={() => {
+                        setWorkspaceModal(null);
+                        if (activeIdRef.current) window.skybrowse.tabs.activate(activeIdRef.current);
+                    }}
+                    onConfirm={(payload) => {
+                        handleWorkspaceModalConfirm(payload);
+                        if (activeIdRef.current) window.skybrowse.tabs.activate(activeIdRef.current);
+                    }}
                 />
             )}
         </div>

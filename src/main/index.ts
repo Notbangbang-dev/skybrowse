@@ -887,7 +887,8 @@ function isBuiltinSender(sender: Electron.WebContents): boolean {
 }
 
 function validGuestId(value: unknown): value is string {
-    return typeof value === "string" && value.length > 0 && value.length < 100;
+    if (typeof value !== "string") return false;
+    return value === "" || (value.length > 0 && value.length < 100);
 }
 
 ipcMain.handle("skybrowse:bookmarks-get", (event) => {
@@ -1166,7 +1167,11 @@ ipcMain.handle("skybrowse:tab-destroy", (event, id: unknown) => {
 
 ipcMain.handle("skybrowse:tab-activate", (event, id: unknown) => {
     if (!isHostSender(event.sender)) return;
-    if (!validGuestId(id)) return;
+    if (typeof id !== "string") return;
+    if (id === "") {
+        activateGuest("");
+        return;
+    }
     if (!guests.has(id)) return;
     activateGuest(id);
 });
